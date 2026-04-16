@@ -29,11 +29,21 @@ A local, web-based JPG to SVG converter application. Convert your raster images 
    npm install
    ```
 
-## ⚡ Quick Start (Fastest Way)
+## ⚡ Quick Start
 
-Simply **double-click** `start.bat` in the project folder! That's it! 🎉
+1. Install dependencies:
+   ```bash
+   npm install
+   ```
 
-For detailed quick start guide, see [QUICKSTART.md](QUICKSTART.md)
+2. Start the server:
+   ```bash
+   npm start
+   ```
+
+3. Open your browser to **http://localhost:3000** 🎉
+
+For detailed instructions, see [QUICKSTART.md](QUICKSTART.md)
 
 ## 🖨️ 3D Printing Mode
 
@@ -53,30 +63,18 @@ New feature! Convert images specifically optimized for 3D printing, engraving, a
 - Relief designs
 - Technical drawings
 
-**For Bambu Studio Users:**
-⚠️ **Important:** SVG is a vector format, not a 3D model format. Bambu Studio expects `.stl`, `.obj`, or `.amf` files for 3D printing. The SVG converter produces 2D vector files that need conversion:
-- **For embossing:** Use Fusion 360 or a CAD app to convert SVG → 3D model → STL
-- **For 2D designs:** Use Inkscape or similar vector editor to edit/finalize SVG
-
-See [SVG_VALIDATION_GUIDE.md](SVG_VALIDATION_GUIDE.md) and [BAMBU_STUDIO_GUIDE.md](BAMBU_STUDIO_GUIDE.md) for detailed workflows.
-
 **Quick Start:**
 1. Upload image → Select "🖨️ 3D Print (Optimized)" mode
 2. Adjust stroke width for your use case
 3. Convert and download
 4. Import SVG into your vector editor or CAD software
 
-📖 **Full Guides:**
-- [3D_PRINTING_GUIDE.md](3D_PRINTING_GUIDE.md) - Detailed 3D printing instructions
-- [BAMBU_STUDIO_GUIDE.md](BAMBU_STUDIO_GUIDE.md) - Bambu Studio integration guide
-- [FUSION360_CONVERSION_GUIDE.md](FUSION360_CONVERSION_GUIDE.md) - Convert SVG to 3D model for Bambu in Fusion 360
-- [SVG_VALIDATION_GUIDE.md](SVG_VALIDATION_GUIDE.md) - Validation & troubleshooting
-
 ## Usage
 
 1. Start the server:
-   - **Easiest:** Double-click `start.bat`
-   - **Alternative:** Run `npm start`
+   ```bash
+   npm start
+   ```
 
 2. Open your browser and navigate to:
    ```
@@ -84,12 +82,18 @@ See [SVG_VALIDATION_GUIDE.md](SVG_VALIDATION_GUIDE.md) and [BAMBU_STUDIO_GUIDE.m
    ```
 
 3. Upload an image:
-   - Drag and drop an image onto the upload area, or
+   - Drag and drop JPG/PNG onto the upload area, or
    - Click "Browse Files" to select an image
 
-4. Click "Convert to SVG" button
+4. Choose conversion mode:
+   - **Normal**: Standard vector conversion
+   - **3D Print (Optimized)**: Optimized for 3D printing, laser cutting, and engraving
 
-5. Download the converted SVG file
+5. Click "Convert to SVG" button
+
+6. Download the converted SVG file
+
+⚠️ **Note:** SVG is a 2D vector format. For 3D printing in applications like Bambu Studio, you'll need to convert SVG → 3D model using CAD software like Fusion 360.
 
 ## Development
 
@@ -116,29 +120,20 @@ npm run dev
 
 ```
 jpg-svg/
-├── server.js           # Express server setup
-├── converter.js        # Image conversion logic
-├── package.json        # Dependencies
+├── server.js          # Express server
+├── converter.js       # Image conversion logic
+├── package.json       # Dependencies
 ├── public/
-│   ├── index.html      # Main HTML page
-│   ├── style.css       # Styling
-│   └── script.js       # Frontend JavaScript
-├── uploads/            # Temporary storage for files
-└── README.md           # This file
+│   ├── index.html     # Frontend
+│   ├── script.js      # Client-side logic
+│   └── style.css      # Styling
+├── README.md          # This file
+└── QUICKSTART.md      # Quick start guide
 ```
 
-## Limitations
+## License
 
-- Maximum file size: 50MB
-- Supported input formats: JPG, PNG
-- Large images may take some time to convert
-- Quality of SVG depends on the complexity and colors in the original image
-
-## Technologies Used
-
-- **Backend:** Node.js, Express
-- **Image Processing:** Sharp, Potrace
-- **Frontend:** HTML5, CSS3, Vanilla JavaScript
+MIT
 
 ## License
 
