@@ -2,14 +2,50 @@ const express = require('express');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
-const cors = require('cors');
 const { convertJpgToSvg } = require('./converter');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+function parseRegion(value) {
+  if (value === undefined) {
+    return null;
+  }
+
+  let region;
+  try {
+    region = JSON.parse(value);
+  } catch (error) {
+    throw new Error('Selected area is invalid');
+  }
+
+  if (!Array.isArray(region) || region.length < 3 || region.length > 10000) {
+    throw new Error('Selected area must contain between 3 and 10000 points');
+  }
+
+  const validPoints = region.every((point) => point
+    && Number.isFinite(point.x)
+    && Number.isFinite(point.y)
+    && point.x >= 0
+    && point.x <= 1
+    && point.y >= 0
+    && point.y <= 1);
+  if (!validPoints) {
+    throw new Error('Selected area points must be normalized between 0 and 1');
+  }
+
+  return region;
+}
+
+function cleanupUpload(filePath) {
+  fs.unlink(filePath, (error) => {
+    if (error && error.code !== 'ENOENT') {
+      console.error('Upload cleanup error:', error);
+    }
+  });
+}
+
 // Middleware
-app.use(cors());
 app.use(express.static('public'));
 app.use(express.json());
 
@@ -45,12 +81,20 @@ app.get('/', (req, res) => {
 });
 
 app.post('/api/convert', upload.single('image'), async (req, res) => {
+  let inputPath;
   try {
     if (!req.file) {
       return res.status(400).json({ error: 'No file uploaded' });
     }
 
-    const inputPath = req.file.path;
+    inputPath = req.file.path;
+    let region;
+    try {
+      region = parseRegion(req.body.region);
+    } catch (error) {
+      cleanupUpload(inputPath);
+      return res.status(400).json({ error: error.message });
+    }
     const mode = req.body.mode || 'normal'; // 'normal' or '3dprint'
     const strokeWidth = parseFloat(req.body.strokeWidth) || 1;
     const outputFileName = path.basename(inputPath, path.extname(inputPath)) + '.svg';
@@ -59,7 +103,8 @@ app.post('/api/convert', upload.single('image'), async (req, res) => {
     // Convert JPG to SVG with mode and options
     await convertJpgToSvg(inputPath, outputPath, mode, {
       strokeWidth: strokeWidth,
-      precision: 2
+      precision: 2,
+      region
     });
 
     // Send the converted SVG file
@@ -77,10 +122,13 @@ app.post('/api/convert', upload.single('image'), async (req, res) => {
     });
   } catch (error) {
     console.error('Conversion error:', error);
+    if (inputPath) {
+      cleanupUpload(inputPath);
+    }
     res.status(500).json({ error: error.message || 'Conversion failed' });
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`JPG to SVG Converter running at http://localhost:${PORT}`);
+app.listen(PORT, '127.0.0.1', () => {
+  console.log(`JPG to SVG Converter running at http://127.0.0.1:${PORT}`);
 });

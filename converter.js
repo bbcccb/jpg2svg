@@ -153,6 +153,22 @@ function optimizeFor3DPrint(svg, options = {}) {
   }
 }
 
+function createOutsideRegionOverlay(width, height, region) {
+  if (!Array.isArray(region) || region.length < 3 || region.length > 10000) {
+    throw new Error('Selected area must contain between 3 and 10000 points');
+  }
+
+  const points = region.map(({ x, y }) => {
+    if (!Number.isFinite(x) || !Number.isFinite(y) || x < 0 || x > 1 || y < 0 || y > 1) {
+      throw new Error('Selected area points must be normalized between 0 and 1');
+    }
+
+    return `${(x * width).toFixed(2)},${(y * height).toFixed(2)}`;
+  }).join(' ');
+
+  return Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}"><defs><mask id="outside-region" maskUnits="userSpaceOnUse" x="0" y="0" width="${width}" height="${height}"><rect width="${width}" height="${height}" fill="white"/><polygon points="${points}" fill="black"/></mask></defs><rect width="${width}" height="${height}" fill="white" mask="url(#outside-region)"/></svg>`);
+}
+
 /**
  * Convert JPG/PNG image to SVG using potrace
  * @param {string} inputPath - Path to input image
@@ -173,15 +189,35 @@ async function convertJpgToSvg(inputPath, outputPath, mode = 'normal', options =
       // Adjust resolution based on mode for 3D printing
       const targetSize = mode === '3dprint' ? Math.min(2000, maxDim) : 1000;
       
-      // Process the image: resize if needed and convert to bitmap
-      await sharp(inputPath)
-        .resize(targetSize, targetSize, {
+      const resizeOptions = {
           fit: 'inside',
           withoutEnlargement: true
-        })
-        .greyscale() // Convert to grayscale for better tracing
-        .normalise() // Enhance contrast for better tracing
-        .toFile(bmpPath);
+      };
+
+      if (options.region) {
+        const { data: resizedImage, info } = await sharp(inputPath)
+          .rotate()
+          .resize(targetSize, targetSize, resizeOptions)
+          .png()
+          .toBuffer({ resolveWithObject: true });
+        const outsideRegionOverlay = createOutsideRegionOverlay(
+          info.width,
+          info.height,
+          options.region
+        );
+
+        await sharp(resizedImage)
+          .composite([{ input: outsideRegionOverlay }])
+          .greyscale()
+          .normalise()
+          .toFile(bmpPath);
+      } else {
+        await sharp(inputPath)
+          .resize(targetSize, targetSize, resizeOptions)
+          .greyscale() // Convert to grayscale for better tracing
+          .normalise() // Enhance contrast for better tracing
+          .toFile(bmpPath);
+      }
 
       // Potrace options - optimized for 3D printing
       const potraceOptions = mode === '3dprint' 
@@ -190,14 +226,14 @@ async function convertJpgToSvg(inputPath, outputPath, mode = 'normal', options =
             turdsize: 5,        // Higher = simpler paths (better for 3D print)
             turnpolicy: 'black', // Better for printing
             color: 'black',
-            background: 'white'
+            background: 'transparent'
           }
         : {
             alphamax: 1,
             turdsize: 2,
             turnpolicy: 'majority',
             color: 'black',
-            background: 'white'
+            background: 'transparent'
           };
 
       potrace.trace(bmpPath, potraceOptions, (err, svg) => {

@@ -1,13 +1,14 @@
 # JPG to SVG Converter
 
-A local, web-based JPG to SVG converter application. Convert your raster images (JPG, PNG) to scalable vector graphics (SVG) directly in your browser with no cloud uploads.
+A local, web-based JPG to SVG converter. Images are processed by a server that listens only on this computer; no third-party service is used.
 
 ## Features
 
 - 🖼️ Upload JPG or PNG images
-- 🎨 Convert to SVG vector format
-- 📥 Download converted SVG files
-- 🔒 All processing done locally - no data sent to external servers
+- 🎨 Convert dark image areas to black SVG paths on a transparent background
+- 📥 Queue multiple images for sequential conversion and download each SVG
+- ✏️ Optionally draw a closed outline to limit conversion to a selected image area
+- 🔒 Images are sent only to the local converter and are not sent to third-party services
 - 💻 Clean, modern web interface
 - 📱 Responsive design
 - 🖨️ **NEW: 3D Print Mode** - Optimized SVG for 3D printing, engraving, and CAD
@@ -41,7 +42,7 @@ A local, web-based JPG to SVG converter application. Convert your raster images 
    npm start
    ```
 
-3. Open your browser to **http://localhost:3000** 🎉
+3. Open your browser to **http://127.0.0.1:3000** 🎉
 
 For detailed instructions, see [QUICKSTART.md](QUICKSTART.md)
 
@@ -78,20 +79,22 @@ New feature! Convert images specifically optimized for 3D printing, engraving, a
 
 2. Open your browser and navigate to:
    ```
-   http://localhost:3000
+   http://127.0.0.1:3000
    ```
 
-3. Upload an image:
-   - Drag and drop JPG/PNG onto the upload area, or
-   - Click "Browse Files" to select an image
+3. Add one or more images:
+   - Drag and drop multiple JPG/PNG files onto the upload area, or
+   - Click "Browse Images" to select multiple files
 
 4. Choose conversion mode:
    - **Normal**: Standard vector conversion
    - **3D Print (Optimized)**: Optimized for 3D printing, laser cutting, and engraving
 
-5. Click "Convert to SVG" button
+5. Optionally click **Select area** next to an image and draw a closed outline around the part to convert. The inside is kept and the outside is ignored; without an outline, the whole image is converted.
 
-6. Download the converted SVG file
+6. Click "Convert Queue" to process the images in order. Each completed image can be downloaded immediately.
+
+7. Click "Download SVG" next to each completed image
 
 ⚠️ **Note:** SVG is a 2D vector format. For 3D printing in applications like Bambu Studio, you'll need to convert SVG → 3D model using CAD software like Fusion 360.
 
@@ -105,16 +108,24 @@ npm run dev
 
 ## Supported Formats
 
-- **Input:** JPG, PNG (up to 50MB)
-- **Output:** SVG (Scalable Vector Graphics)
+- **Input:** JPG, PNG (up to 50MB per image)
+- **Output:** SVG with black traced paths and a transparent background
+
+## Privacy
+
+- The server listens only on `127.0.0.1`, so it is not exposed to other devices on the network.
+- Images are sent from the browser to the converter running on the same computer. No analytics or third-party upload service is used.
+- Uploaded and intermediate files are stored temporarily in the local `uploads` folder and cleaned up after conversion.
 
 ## How It Works
 
-1. The image is uploaded to the server
+1. The image is sent to the local server running on the same computer
 2. Sharp processes the image and converts it to grayscale
-3. Potrace traces the bitmap and generates SVG paths
+3. Potrace traces dark areas as black SVG paths on a transparent background
 4. The SVG file is sent back to the client for download
 5. Temporary files are automatically cleaned up
+
+Batch conversions are queued in the browser and sent to the local server one image at a time. Each image can have its own optional outlined region. If an image fails, it is marked in the queue and the remaining images continue processing.
 
 ## File Structure
 
@@ -160,12 +171,10 @@ npm install
 
 ## Future Enhancements
 
-- Batch conversion
-- Adjustable conversion parameters
 - Preview of SVG before download
 - Support for more image formats
 - Conversion history
 
 ---
 
-Made with ❤️ for image conversion enthusiasts
+Made for local image conversion
